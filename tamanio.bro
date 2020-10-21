@@ -1,13 +1,16 @@
+# Change from vector to set by comparisons, the vector type in bro does not support them
 
-#Cambio de vector a set por las comparaciones, el tipo vector en bro no las soporta
 global conex: set[connection];
 global tam=0;
-# Cada vez que entra un nuevo paquete lo comparo con lo que ya tengo en el set
+
+### package ???, maybe a packet
+# Every time a new package comes in, compare it to what is already in a set
+
 event new_connection(c: connection){
-# Si el set esta vacio meto el primer paquete
+   # If the set is empty I put the first package
    add conex[c];
    tam=tam+1;
-   print fmt("Numero total paquetes = %d",|conex|);
-   print fmt("Tamanio con tam: %d", tam);
+   print fmt("Total number of packages = %d",|conex|);
+   print fmt("Size count: %d", tam);
 
 }
