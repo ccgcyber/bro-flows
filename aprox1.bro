@@ -1,56 +1,55 @@
 
-## Incluyo librerias como en el ejemplo del evento de paquetes eliminados de la documentacion
+## I include libraries as in the example of the removed packages event in the documentation
 ## @load base/protocols/conn
 ## @load base/protocols/http
-##global conexiones: vector of connection;
+## global connections: vector of connection;
 
-## Primera aproximacion con un solo set, simplemente almaceno los paquetes en un set y cuando mueren los elimino
-## Cambio de vector a set por las comparaciones, el tipo vector en bro no las soporta
+###########################################################################
+## First approach with a single set, just store the packets in a set and when they die I delete them
+## Change from vector to set for comparisons, the vector type in bro does not support them
 global conex: set[connection];
-## Variable global para conocer el tamaño del set
+## Global variable to know the size of the set
 global tams=0;
-## Variable global para conocer el numero de paquetes que hay en el archivo pcap
+## Global variable to know the number of packets in the pcap file
 global tam=0;
-## Variable para ver los paquetes que eliminamos y comprobar si son los mismos que los que hemos añadido
+## Variable to see the packages we removed and check if they are the same as the ones we added
 global elimi=0;
 
-## Segunda aproximacion... FICHERO aprox2.bro CREO SET COMPLEMENTARIO PARA ALMACENAR LOS QUE YA TENGO ALMACENADOS EN ALGUN MOMENTO
+## Second approach... FILE approx2.bro I CREATE A COMPLEMENTARY SET TO STORE THOSE THAT I ALREADY HAVE STORED AT SOME POINT
 
-
-## Creo funcion auxiliar para ver la informacion del paquete nuevo que se añade, no de todos los paquetes todo el rato
+## I create an auxiliary function to see the information of the new package that is added, not of all the packages all the time
 function informacion_paquete(c: connection){
-    print fmt("Informacion del paquete nuevo IPo: %s , Po: %s , IPd: %s , Pd: %s ", c$id$orig_h, c$id$orig_p, c$id$resp_h, c$id$resp_p);
+    print fmt("New IP package information: %s , Po: %s , IPd: %s , Pd: %s ", c$id$orig_h, c$id$orig_p, c$id$resp_h, c$id$resp_p);
 }
 
-## Cada vez que entra un nuevo paquete lo comparo con lo que ya tengo en el set
+## Every time a new package comes in I compare it to what I already have in the set
 event new_connection(c: connection){
 
-## Sumamos uno para poder ver el numero de paquetes totales que tenemos
-  tam=tam+1;
-## Si el set esta vacio meto el primer paquete
-  if(|conex|==0){
+## We add one to be able to see the total number of packages we have
+tam=tam+1;
+## If the set is empty I put the first package
+if(|conex|==0){
    add conex[c];
   }
-## Creo un connection local para poder hacer comparaciones con el set y poder descartar paquetes
-  local cd: connection;
-## Variable booleana para controlar el acceso al set
-  local met = F;
-## Si el set está vacio le permitimos escritura
-  if(|conex|==0){
+## I create a local connection to be able to make comparisons with the set and to be able to discard packets
+local cd: connection;
+## Boolean variable to control access to the set
+local met = F;
+## If the set is empty we allow writing
+if(|conex|==0){
     add conex[c];
     tams=tams+1;
   }
 
-
-## for que va recorriendo el set y haciendo comparaciones
-  for(s in conex){
-    ## Copiamos en la variable local para comparar con todo lo que hay en el set
+## for which he goes around the set and makes comparisons
+for(s in conex){
+    ## We copy into the local variable to compare with everything in the set
     cd=s;
     if(cd$id$orig_h != c$id$orig_h){
       if(cd$id$resp_h != c$id$resp_h){
         if(cd$id$orig_p != c$id$orig_p){
           if(cd$id$resp_p != c$id$resp_p){
-            ## Si se dan todas las condiciones la variable booleana de control de acceso al set se cambia a true, T
+            ## If all conditions are met the boolean variable controlling access to the set is changed to true, T
             met=T;
           }
         }
@@ -58,41 +57,40 @@ event new_connection(c: connection){
     }
 
   }
-  ## Con la variable booleana controlamos el crecimiento del set
+  ## With the boolean variable we control the growth of the set
   if (met==T){
     add conex[c];
     tams=tams+1;
-    print fmt("Meto un paquete nuevo por la conexion de origen distinta");
+    print fmt("I put a new packet through the different source connection");
   }
   met=F;
-  print fmt("Numero de paquetes al momento: %d", tam);
-  print fmt("Tamanio del set: %d", tams);
+  print fmt("Number of packages at the moment: %d", tam);
+  print fmt("Set size: %d", tams);
   informacion_paquete(c);
 }
 
-## cuando la conexion es borrada
-## se obtienen los mismos paquetes añadidos que eliminados, por lo tanto hay que controlar cuando lo añadimos y cuando lo eliminamos
+## when the connection is deleted
+## the same packets are obtained when added as when deleted, therefore we must control when we add it and when we delete it
 event connection_state_remove(c: connection){
 
-##  print fmt("Conexion eliminada : %s", c$id$orig_h);
+##  print fmt("Connection deleted : %s", c$id$orig_h);
 ##  elimi=elimi+1;
-##  print fmt("Numero de paquetes eliminados: %d", elimi);
+##  print fmt("Number of packages removed: %d", elimi);
 
-
-  ## Creo un connection local para poder hacer comparaciones con el set y poder descartar paquetes
+  ## I create a local connection to be able to make comparisons with the set and to be able to discard packets
     local cd: connection;
-  ## Variable booleana para controlar el acceso al set
+  ## Boolean variable to control access to the set
     local met = F;
 
-  ## for que va recorriendo el set y haciendo comparaciones
+  ## for which he goes around the set and makes comparisons
     for(s in conex){
-      ## Copiamos en la variable local para comparar con todo lo que hay en el set
+      ## We copy into the local variable to compare with everything in the set
       cd=s;
       if(cd$id$orig_h == c$id$orig_h){
         if(cd$id$resp_h == c$id$resp_h){
           if(cd$id$orig_p == c$id$orig_p){
             if(cd$id$resp_p == c$id$resp_p){
-              ## Si se dan todas las condiciones la variable booleana de control de acceso al set se cambia a true, T
+              ## If all conditions are met the boolean variable controlling access to the set is changed to true, T
               met=T;
             }
           }
@@ -100,28 +98,28 @@ event connection_state_remove(c: connection){
       }
 
     }
-    ## Con la variable booleana controlamos el decrecimiento del set
+    ## With the boolean variable we control the decrease of the set
     if (met==T){
       delete conex[c];
       elimi=elimi+1;
-    ## Controlamos que el tamaño que manejamos por pantalla del set no sea menor que 0 para que no de valores basura
+    ## We check that the size we manage per screen of the set is not less than 0 so that it does not give garbage values
       if(tams==0){
         tams=0;
       }
       if(tams>0){
         tams=tams-1;
       }
-    ## Mostramos por pantalla un mensaje de eliminacion de un paquete si procede
-      print fmt("Elimino un paquete por la conexion de origen distinta");
+    ## We display a message on the screen about the removal of a package if necessary
+      print fmt("I drop a packet because of the different source connection");
     }
     met=F;
-    print fmt("Numero de paquetes al momento: %d", tam);
-    print fmt("Tamanio del set: %d", tams);
+    print fmt("Number of packages at the moment: %d", tam);
+    print fmt("Set size: %d", tams);
     informacion_paquete(c);
-    ## print fmt("Numero de paquetes en set: %d", |conex|);
+    ## print fmt("Number of packages in set: %d", |conex|);
 }
 
-## Evento que se lanza cuando BRO termina
+## Event that is fired when BRO ends
 event bro_done(){
-  print fmt("Numero de paquetes en set: %d", |conex|);
+  print fmt("Number of packages in set: %d", |conex|);
 }
